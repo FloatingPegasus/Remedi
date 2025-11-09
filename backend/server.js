@@ -14,7 +14,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",               
     "http://localhost:5174",                   
-    "https://remedi-frontend.vercel.app",      
+    "https://remedi-eight.vercel.app",      
     "https://remedi-admin.vercel.app"          
   ],
   credentials: true
