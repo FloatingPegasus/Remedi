@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 const Banner = () => {
 
     const navigate = useNavigate()
+    const token = localStorage.getItem("token");
 
     return (
         <div className='flex bg-primary rounded-lg  px-6 sm:px-10 md:px-14 lg:px-12 my-20 md:mx-10'>
@@ -15,7 +16,24 @@ const Banner = () => {
                     <p>Book Appointment</p>
                     <p className='mt-4'>With 100+ Trusted Doctors</p>
                 </div>
-                <button onClick={() => { navigate('/login'); scrollTo(0, 0) }} className='bg-white text-sm sm:text-base text-[#595959] px-8 py-3 rounded-full mt-6 hover:scale-105 transition-all '>Create account</button>
+
+                {/* ✅ Conditional Button */}
+                {!token ? (
+                    <button
+                        onClick={() => navigate('/signup')}
+                        className='bg-white text-sm sm:text-base text-[#595959] px-8 py-3 rounded-full mt-6 hover:scale-105 transition-all'
+                    >
+                        Create account
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => navigate('/doctors')}
+                        className='bg-white text-sm sm:text-base text-[#595959] px-8 py-3 rounded-full mt-6 hover:scale-105 transition-all'
+                    >
+                        Book Appointment
+                    </button>
+                )}
+
             </div>
 
             {/* ------- Right Side ------- */}
