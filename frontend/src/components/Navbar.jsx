@@ -84,7 +84,14 @@ const Navbar = () => {
             <NavLink onClick={() => setShowMenu(false)} to="/ai-tools">
   <p className='px-4 py-2 rounded full inline-block text-primary cursor-pointer'>🤖 AI TOOLS</p>
 </NavLink>
-
+            {!token && (
+              <button
+                onClick={() => { navigate('/login'); setShowMenu(false); }}
+                className="mt-4 w-full bg-primary text-white py-2 rounded-full font-light"
+              >
+                Login
+              </button>
+            )}
           </ul>
         </div>
       </div>
