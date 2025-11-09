@@ -8,6 +8,19 @@ import doctorRouter from "./routes/doctorRoute.js"
 import adminRouter from "./routes/adminRoute.js"
 import reminderRouter from "./routes/reminderRoute.js"
 import aiRouter from "./routes/aiRoute.js";
+import cors from "cors";
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",               
+    "http://localhost:5174",                   
+    "https://remedi-frontend.vercel.app",      
+    "https://remedi-admin.vercel.app"          
+  ],
+  credentials: true
+}));
+
+
 
 // app config
 const app = express()
