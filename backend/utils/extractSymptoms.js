@@ -2,15 +2,24 @@ import { groq, HEAVY_MODEL } from "../config/groqClient.js";
 
 // Strict JSON extractor using 70B
 export async function extractSymptoms(message) {
-  const prompt = `
+const prompt = `
 Extract clinical information from the user's message.
-RETURN STRICT JSON ONLY with keys:
-symptoms: array of short phrases
-severity: "mild"|"moderate"|"severe"
-mood: string|null
-speciality: string|null
-notes: short human summary (15-25 words)
-NO markdown, NO explanation.
+If the user DENIES, REMOVES, or CORRECTS a previous condition, record this in "notes".
+
+RETURN STRICT JSON ONLY:
+{
+  "symptoms": ["array", "of", "phrases"],
+  "severity": "negligible" | "mild" | "moderate" | "severe" | "critical",
+  "mood": "string" | null,
+  "notes": "Short summary. If user denies a condition, state it explicitly here."
+}
+
+SEVERITY GUIDE:
+- negligible: Minor annoyance (e.g. dry skin)
+- mild: Noticeable but ignored (e.g. light itch)
+- moderate: Interferes with focus (e.g. stomach ache)
+- severe: Prevents daily tasks (e.g. high fever, migraine)
+- critical: Emergency / Unbearable (e.g. chest pain, fainting)
 
 Message: "${message.replace(/"/g, '\\"')}"
 `;

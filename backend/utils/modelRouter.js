@@ -14,6 +14,7 @@ const PATTERN_GROUPS = [
   /(swelling|redness|pus|infection|inflamed|bump)/i,
   /(vomit|vomiting|nausea|diarrhea|constipation|acid|gastric|stomach|abdomen)/i,
   /(period|cramps|pregnancy|pregnant|bleeding|uterus|vaginal)/i,
+  /(stopped|gone|cured|don't have|do not have|lied|false|wrong diagnosis|incorrect)/i,
   /(rash|itch|itching|blister|lesion|wound|bruise)/i
 ];
 

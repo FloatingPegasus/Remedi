@@ -1,12 +1,6 @@
 import mongoose from "mongoose";
 import DigitalTwin from "../models/digitalTwinModel.js";
-import ConversationMemory from "../models/conversationMemoryModel.js";
-import axios from "axios";
-import { groq } from "../config/groqClient.js";
-
-const GROQ_API_URL = process.env.GROQ_API_URL || "https://api.groq.ai/v1";
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL_DEFAULT = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+import { groq, HEAVY_MODEL } from "../config/groqClient.js";
 
 function computeRiskLevel(symptomHistory = []) {
   const recent = (symptomHistory || []).filter(
@@ -63,12 +57,13 @@ export async function appendEntry(userId, parsed = {}) {
   } = parsed;
 
   try {
+    const validSeverities = ["negligible", "mild", "moderate", "severe", "critical"];
     const pushObj = {
       $push: {
         symptomHistory: {
           date: new Date(),
           symptoms: Array.isArray(symptoms) ? symptoms : [],
-          severity: ["mild", "moderate", "severe"].includes(severity) ? severity : "moderate",
+          severity: validSeverities.includes(severity) ? severity : "moderate",
           notes: typeof notes === "string" ? notes : String(notes),
           source
         }
@@ -108,6 +103,15 @@ export async function appendEntry(userId, parsed = {}) {
   }
 }
 
+const VALID_SPECIALITIES = [
+  "General physician",
+  "Gynecologist",
+  "Dermatologist",
+  "Pediatricians",
+  "Neurologist",
+  "Gastroenterologist"
+];
+
 export async function regenerateSummary(req, res) {
   try {
     const { userId } = req.params;
@@ -119,32 +123,56 @@ export async function regenerateSummary(req, res) {
     if (!twin) return res.status(404).json({ success: false, message: "No digital twin found" });
 
     const payload = {
-      promptType: "digital_twin_summary",
-      data: {
-        symptomHistory: (twin.symptomHistory || []).slice(-60),
-        moodHistory: (twin.moodHistory || []).slice(-60)
-      }
+      symptomHistory: (twin.symptomHistory || []).slice(-60),
+      moodHistory: (twin.moodHistory || []).slice(-60)
     };
 
-// ✅ FIX: Use the groq client instead of axios
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: HEAVY_MODEL,
       messages: [
-        { 
-          role: "system", 
-          content: "You are a medical analyst. Read the following symptom history JSON and write a concise, helpful summary of the user's health trends, risk factors, and potential improvements. Keep it under 100 words." 
+        {
+          role: "system",
+          content: `You are a senior medical consultant AI. Analyze the patient's entire symptom history to find correlations (e.g., tick bite + leg pain -> possible tick-borne illness).
+
+          TASKS:
+          1. "summaryText": A concise, professional health summary (under 100 words).
+          2. "recommendedSpecialists": A list of 1-2 specialist types.
+
+          CRITICAL INVENTORY RULE:
+          You must ONLY recommend specialists from this exact list: ${JSON.stringify(VALID_SPECIALITIES)}.
+          
+          If the ideal specialist (e.g., Infectious Disease, Orthopedist) is not in the list, you MUST map it to the best available option from the list (e.g., map Infectious Disease -> General physician).
+
+          Return STRICT JSON only.`
         },
-        { 
-          role: "user", 
-          content: JSON.stringify(payload) 
+        {
+          role: "user",
+          content: JSON.stringify(payload)
         }
       ],
-      temperature: 0.5
+      temperature: 0.2
     });
 
-    const output = response.choices[0]?.message?.content || "No summary generated.";
-    twin.trendSummary = output;
+    let output = response.choices[0]?.message?.content || "{}";
+    
+    output = output.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    let parsedOutput;    
+    try {
+        parsedOutput = JSON.parse(output); 
+    } catch (e) {
+        console.error("JSON Parse Error in Summary:", e);
+        parsedOutput = { 
+            summaryText: "Could not generate structured summary. Please try refreshing.", 
+            recommendedSpecialists: ["General physician"] 
+        };
+    }
+
+    twin.summary = parsedOutput.summaryText || "No summary available.";
+    twin.trendSummary = parsedOutput.summaryText;
+    twin.overallDocRecommendation = parsedOutput.recommendedSpecialists || [];
     twin.lastUpdated = new Date();
+    
     await twin.save();
 
     return res.status(200).json({ success: true, digitalTwin: twin });
@@ -166,5 +194,23 @@ export async function exportPdf(req, res) {
   } catch (err) {
     console.error("exportPdf ERROR:", err?.message || err);
     return res.status(500).json({ success: false, message: "Failed to export digital twin" });
+  }
+}
+
+export async function clearTwin(req, res) {
+  try {
+    const userId = req.body.userId; 
+    
+    if (!ensureValidUserId(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid userId" });
+    }
+
+    await DigitalTwin.deleteOne({ userId });
+    
+    console.log(`🗑️ Digital Twin deleted for user: ${userId}`);
+    return res.status(200).json({ success: true, message: "Digital Twin cleared successfully" });
+  } catch (err) {
+    console.error("clearTwin ERROR:", err?.message || err);
+    return res.status(500).json({ success: false, message: "Failed to clear Digital Twin" });
   }
 }

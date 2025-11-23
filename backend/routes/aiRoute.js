@@ -45,7 +45,7 @@ router.post("/chat", authUser, async (req, res) => {
           const extraction = await extractSymptoms(message);
           
           // Only save if actual symptoms were found
-          if (extraction && extraction.symptoms && extraction.symptoms.length > 0) {
+          if (extraction && (extraction.symptoms.length > 0 || extraction.notes)) {
             await appendEntry(userId, {
               symptoms: extraction.symptoms,
               severity: extraction.severity,
@@ -60,7 +60,6 @@ router.post("/chat", authUser, async (req, res) => {
       })();
     }
 
-    // ✅ Enhanced system prompt
     const systemPrompt = `
 You are Remedi AI, the intelligent assistant of the Remedi Healthcare Platform.
 
@@ -76,10 +75,9 @@ SAFETY RULES (IMPORTANT):
 APPOINTMENT RULES (IMPORTANT):
 - Never book appointments yourself.
 - Never invent appointment times or dates.
-- You MUST ONLY mention doctors listed under “Matched Doctors”. 
-  If a doctor is NOT listed there, you must say “I do not have any doctor for this speciality on Remedi.”
-  NEVER mention or create any doctor whose name is not provided in the Matched Doctors list.
-- If no suitable doctor exists in the database, say: “I don’t have a matching doctor for that speciality on Remedi.”
+- STRICT RULE: You must ONLY mention doctors listed in the "Matched Doctors" section below.
+- If the "Matched Doctors" list is empty or says "No matching doctors found", you MUST say: "I could not find a specific specialist for this on Remedi, but a General Physician is usually a good start."
+- NEVER invent names like "Dr. Smith" or "Dr. Doe". If the data isn't there, admit it.
 
 CONCISE RESPONSE RULES:
 - Keep every answer short: ideally 2–3 sentences.

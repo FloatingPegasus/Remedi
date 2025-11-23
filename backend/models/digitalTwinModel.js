@@ -5,7 +5,7 @@ const SymptomEntrySchema = new mongoose.Schema({
   symptoms: [{ type: String }],
   severity: {
     type: String,
-    enum: ["mild", "moderate", "severe"],
+    enum: ["negligible", "mild", "moderate", "severe", "critical"],
     default: "moderate"
   },
   notes: { type: String, default: "" },
@@ -26,6 +26,8 @@ const DigitalTwinSchema = new mongoose.Schema(
       unique: true,
       index: true
     },
+    overallDocRecommendation: [{ type: String }], 
+    summary: { type: String, default: "No summary generated yet." },
     symptomHistory: [SymptomEntrySchema],
     moodHistory: [MoodEntrySchema],
     specialityCounts: { type: Map, of: Number, default: {} },
