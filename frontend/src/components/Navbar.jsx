@@ -85,9 +85,14 @@ const Navbar = () => {
             {token && (
               <NavLink onClick={() => setShowMenu(false)} to='/medicine-reminder' ><p className='px-4 py-2 rounded full inline-block'>REMINDERS</p></NavLink>
             )}
+            {token && (
+              <NavLink onClick={() => setShowMenu(false)} to="/digital-twin">
+                <p className='px-4 py-2 rounded full inline-block'>HEALTH TWIN</p>
+              </NavLink>
+            )}
             <NavLink onClick={() => setShowMenu(false)} to="/ai-tools">
             <p className='px-4 py-2 rounded full inline-block text-primary cursor-pointer'>AI CHAT</p>
-</NavLink>
+            </NavLink>
             {!token && (
               <button
                 onClick={() => { navigate('/login'); setShowMenu(false); }}
