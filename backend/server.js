@@ -8,6 +8,7 @@ import doctorRouter from "./routes/doctorRoute.js";
 import adminRouter from "./routes/adminRoute.js";
 import reminderRouter from "./routes/reminderRoute.js";
 import aiRouter from "./routes/aiRoute.js";
+import digitalTwinRouter from "./routes/digitalTwinRoute.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -39,6 +40,7 @@ const startServer = async () => {
     app.use("/api/doctor", doctorRouter);
     app.use("/api/reminders", reminderRouter);
     app.use("/api/ai", aiRouter);
+    app.use("/api/digital-twin", digitalTwinRouter);
 
     // ✅ Health check
     app.get("/", (req, res) => {

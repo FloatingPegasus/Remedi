@@ -44,9 +44,13 @@ const Navbar = () => {
           </NavLink>
         )}
         <NavLink to="/ai-tools">
-  <li className='py-1 cursor-pointer text-primary hover:text-primary/80'>🤖 AI TOOLS</li>
-</NavLink>
-
+          <li className='py-1 cursor-pointer text-black hover:text-black/80'>AI CHAT</li>
+        </NavLink>
+        {token && (
+          <NavLink to="/digital-twin">
+            <li className='py-1 cursor-pointer hover:text-primary'>HEALTH TWIN</li>
+          </NavLink>
+        )}
       </ul>
 
       <div className='flex items-center gap-4 '>
@@ -82,7 +86,7 @@ const Navbar = () => {
               <NavLink onClick={() => setShowMenu(false)} to='/medicine-reminder' ><p className='px-4 py-2 rounded full inline-block'>REMINDERS</p></NavLink>
             )}
             <NavLink onClick={() => setShowMenu(false)} to="/ai-tools">
-  <p className='px-4 py-2 rounded full inline-block text-primary cursor-pointer'>🤖 AI TOOLS</p>
+            <p className='px-4 py-2 rounded full inline-block text-primary cursor-pointer'>AI CHAT</p>
 </NavLink>
             {!token && (
               <button

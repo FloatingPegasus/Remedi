@@ -15,6 +15,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Verify from './pages/Verify'
 import AITools from "./pages/AITools";
+import DigitalTwin from './pages/DigitalTwin'
 
 
 const App = () => {
@@ -35,6 +36,7 @@ const App = () => {
         <Route path='/medicine-reminder' element={<MedicineReminder />} />
         <Route path='/verify' element={<Verify />} /> 
         <Route path="/ai-tools" element={<AITools />} />
+        <Route path='/digital-twin' element={<DigitalTwin />} />
       </Routes>
       <Footer />
     </div>

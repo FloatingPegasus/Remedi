@@ -41,6 +41,7 @@ const AppContextProvider = (props) => {
 
             if (data.success) {
                 setUserData(data.userData)
+                localStorage.setItem("userId", data.userData._id);
             } else {
                 // Token is invalid or expired, clear it
                 setToken(false)

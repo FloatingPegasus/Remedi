@@ -1,15 +1,13 @@
 import express from "express";
-import OpenAI from "openai";
+import { groq, FAST_MODEL, HEAVY_MODEL } from "../config/groqClient.js";
 import { runRAG } from "../utils/rag.js";
 import { getMemory, updateMemory, appendHistory, clearMemory } from "../utils/memory.js";
+import { chooseModel } from "../utils/modelRouter.js";
+import { extractSymptoms } from "../utils/extractSymptoms.js";
+import { appendEntry } from "../controllers/digitalTwinController.js";
 import authUser from "../middleware/authUser.js";
 
 const router = express.Router();
-
-const groq = new OpenAI({
-  baseURL: "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY
-});
 
 // ✅ Chat endpoint requires login
 router.post("/chat", authUser, async (req, res) => {
@@ -33,9 +31,40 @@ router.post("/chat", authUser, async (req, res) => {
       await runRAG(message, { lastSpeciality: (memory.lastSpeciality || "") });
 
 
+    // 1. DYNAMIC MODEL SWITCHING (The "Option C" Logic)
+    // We ask the router: Is this simple (8B) or medical/complex (70B)?
+    const selectedModel = await chooseModel(message);
+    console.log(`🤖 Model Switched to: ${selectedModel} for user: ${userId}`);
+
+    // 2. DIGITAL TWIN UPDATE (Only if medical/heavy)
+    // If the router says it's medical (HEAVY_MODEL), we extract data for the twin.
+    if (selectedModel === HEAVY_MODEL) {
+      (async () => {
+        try {
+          console.log("🧬 Medical intent detected. Updating Digital Twin...");
+          const extraction = await extractSymptoms(message);
+          
+          // Only save if actual symptoms were found
+          if (extraction && extraction.symptoms && extraction.symptoms.length > 0) {
+            await appendEntry(userId, {
+              symptoms: extraction.symptoms,
+              severity: extraction.severity,
+              notes: extraction.notes,
+              mood: extraction.mood,
+              matchedSpeciality: memory.lastSpeciality || null
+            });
+          }
+        } catch (err) {
+          console.error("❌ Digital Twin Background Update Failed:", err.message);
+        }
+      })();
+    }
+
     // ✅ Enhanced system prompt
     const systemPrompt = `
 You are Remedi AI, the intelligent assistant of the Remedi Healthcare Platform.
+
+CURRENT MODE: ${selectedModel === HEAVY_MODEL ? "EXPERT MEDICAL ANALYSIS (70B)" : "GENERAL ASSISTANT (8B)"}
 
 SAFETY RULES (IMPORTANT):
 - You do NOT diagnose medical conditions.
@@ -86,14 +115,14 @@ ${memory.lastDoctor ? JSON.stringify(memory.lastDoctor, null, 2) : "None"}
 ${ragContext}
 `.trim();
 
-    // ✅ Call Groq Llama 3.1 8B
+    // ✅ Call Groq with the DYNAMICALLY SELECTED MODEL
     const response = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: selectedModel, // <--- Dynamic switching happens here
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message }
       ],
-      max_tokens: 200,
+      max_tokens: 300, // Increased slightly for 70B depth
       temperature: 0.2
     });
 
